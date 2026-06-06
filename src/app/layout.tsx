@@ -1,12 +1,19 @@
-export const metadata = {
-  title: "Conecta UAI — Única Agenda da Inovação do Sul de Minas",
-  description: "Acompanhe os principais eventos do ecossistema de inovação do Sul de Minas.",
+import type { Metadata } from "next";
+import "./globals.css";
+import SiteChrome from "./_components/SiteChrome";
+
+export const metadata: Metadata = {
+  title: "Conecta UAI — Agenda da Inovação do Sul de Minas",
+  description:
+    "A Única Agenda da Inovação do Sul de Minas. Acompanhe os principais eventos do ecossistema regional.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="pt-BR">
-      <body style={{ margin: 0 }}>{children}</body>
+      <body>
+        <SiteChrome>{children}</SiteChrome>
+      </body>
     </html>
   );
 }
