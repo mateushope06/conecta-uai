@@ -299,3 +299,8 @@ img{max-width:100%; display:block;}
 .wa-float:hover{transform:translateY(-2px); box-shadow:0 14px 30px rgba(37,211,102,.55);}
 .wa-float .wa-label{white-space:nowrap;}
 @media(max-width:560px){.wa-float .wa-label{display:none;} .wa-float{padding:14px; border-radius:50%;}}
+
+/* Botao de inscricao no card */
+.ev-cta{display:inline-flex; align-items:center; gap:6px; align-self:flex-start; margin-top:2px; padding:8px 14px; border-radius:10px; font-size:13.5px; font-weight:700; text-decoration:none; color:#fff; background:var(--blue); transition:background .15s, transform .15s;}
+.ev-cta:hover{background:var(--blue-d); transform:translateY(-1px);}
+.ev-cta svg{flex:0 0 auto;}

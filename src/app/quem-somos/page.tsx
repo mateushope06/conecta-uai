@@ -7,7 +7,7 @@ export default function QuemSomos() {
       <img className="about-photo" src="/about.jpg" alt="Plateia em evento de inovação" />
 
       <p>
-        <strong>Conecta UAI</strong> é a <strong>Única Agenda da Inovação</strong> do Sul de Minas —
+        <strong>Conecta UAI</strong> é a <strong>Unificada Agenda da Inovação</strong> do Sul de Minas —
         e o "UAI", além da sigla, é a nossa marca mineira. Um ponto único onde o ecossistema da região
         (universidades, startups, mentores, investidores e poder público) encontra, em um só lugar,
         tudo o que está acontecendo.

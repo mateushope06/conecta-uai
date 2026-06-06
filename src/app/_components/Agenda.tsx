@@ -70,6 +70,11 @@ function EventCard({ ev, big }: { ev: EventDTO; big?: boolean }) {
           <span><MapPin size={14} /> {ev.city} — MG</span>
           <span><Building2 size={14} /> {ev.organizer}</span>
         </div>
+        {ev.registerUrl && (
+          <a className="ev-cta" href={ev.registerUrl} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}>
+            Inscreva-se <ArrowRight size={15} />
+          </a>
+        )}
       </div>
     </article>
   );

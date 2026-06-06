@@ -31,7 +31,7 @@ export default function SiteChrome({ children }: { children: React.ReactNode }) 
             <span className="brand-mark">UAI</span>
             <span className="brand-txt">
               <b>Conecta UAI</b>
-              <span>Única Agenda da Inovação</span>
+              <span>Unificada Agenda da Inovação</span>
             </span>
           </Link>
 
@@ -68,7 +68,7 @@ export default function SiteChrome({ children }: { children: React.ReactNode }) 
             <p>
               <strong>Conecta UAI</strong>
               <br />
-              Única Agenda da Inovação do Sul de Minas
+              Unificada Agenda da Inovação do Sul de Minas
             </p>
           </div>
 
