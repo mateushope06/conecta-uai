@@ -3,7 +3,6 @@ import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 
-// Eventos do protótipo (jun–jul/2026) usados como semente inicial
 const SEED_EVENTS = [
   { title: "Café com Inovação NEMPA", date: "2026-06-06", startTime: "09:00", city: "Pouso Alegre", category: "Networking", mod: "PRESENCIAL", org: "NEMPA", short: "Encontro informal entre fundadores, mentores e investidores." },
   { title: "Demo Day — Aceleração 2026", date: "2026-06-07", startTime: "14:00", city: "Itajubá", category: "Startup", mod: "PRESENCIAL", org: "UNIFEI", featured: true, short: "Startups apresentam tração e abrem rodada para investidores." },
@@ -20,7 +19,6 @@ const SEED_EVENTS = [
 ];
 
 async function main() {
-  // 1) Admin Master — Mateus Hope
   const masterEmail = process.env.ADMIN_MASTER_EMAIL ?? "mateushope@hotmail.com";
   const masterPass = process.env.ADMIN_MASTER_PASSWORD ?? "trocar-no-primeiro-acesso";
   await prisma.user.upsert({
@@ -34,29 +32,56 @@ async function main() {
     },
   });
 
-  // 2) Catálogos + eventos
-  for (const e of SEED_EVENTS) {
-    const city = await prisma.city.upsert({ where: { name: e.city }, update: {}, create: { name: e.city } });
-    const category = await prisma.category.upsert({ where: { name: e.category }, update: {}, create: { name: e.category } });
-    const organizer = await prisma.organizer.upsert({ where: { name: e.org }, update: {}, create: { name: e.org } });
-
-    await prisma.event.create({
-      data: {
-        title: e.title,
-        description: e.short,
-        date: new Date(e.date + "T00:00:00-03:00"),
-        startTime: e.startTime,
-        modality: e.mod as Modality,
-        featured: e.featured ?? false,
-        status: EventStatus.APPROVED, // já entram publicados na agenda inicial
-        cityId: city.id,
-        categoryId: category.id,
-        organizerId: organizer.id,
-      },
-    });
+  const jaTemEventos = await prisma.event.count();
+  if (jaTemEventos === 0) {
+    for (const e of SEED_EVENTS) {
+      const city = await prisma.city.upsert({ where: { name: e.city }, update: {}, create: { name: e.city } });
+      const category = await prisma.category.upsert({ where: { name: e.category }, update: {}, create: { name: e.category } });
+      const organizer = await prisma.organizer.upsert({ where: { name: e.org }, update: {}, create: { name: e.org } });
+      await prisma.event.create({
+        data: {
+          title: e.title,
+          description: e.short,
+          date: new Date(e.date + "T00:00:00-03:00"),
+          startTime: e.startTime,
+          modality: e.mod as Modality,
+          featured: e.featured ?? false,
+          status: EventStatus.APPROVED,
+          cityId: city.id,
+          categoryId: category.id,
+          organizerId: organizer.id,
+        },
+      });
+    }
+    console.log("Seed: Admin Master +", SEED_EVENTS.length, "eventos criados.");
+  } else {
+    console.log("Seed: banco ja tem eventos, pulando criacao inicial.");
   }
 
-  console.log("Seed concluído: Admin Master +", SEED_EVENTS.length, "eventos.");
+  const cityT = await prisma.city.upsert({ where: { name: "Pouso Alegre" }, update: {}, create: { name: "Pouso Alegre" } });
+  const catT = await prisma.category.upsert({ where: { name: "Inovação" }, update: {}, create: { name: "Inovação" } });
+  const orgT = await prisma.organizer.upsert({ where: { name: "Terra Comunicação e Eventos" }, update: {}, create: { name: "Terra Comunicação e Eventos" } });
+  const TEST_TITLE = "Evento Teste — Inscrição Externa";
+  const existingTest = await prisma.event.findFirst({ where: { title: TEST_TITLE } });
+  const testData = {
+    title: TEST_TITLE,
+    description: "Evento de teste para validar o botao Inscreva-se e o link de inscricao externo.",
+    date: new Date("2026-06-11T00:00:00-03:00"),
+    startTime: "09:00",
+    modality: Modality.PRESENCIAL,
+    featured: true,
+    registerUrl: "https://app7.meeventos.com.br/terracomunicacaoeeventos/?x=14&tipo=participantes",
+    status: EventStatus.APPROVED,
+    cityId: cityT.id,
+    categoryId: catT.id,
+    organizerId: orgT.id,
+  };
+  if (existingTest) {
+    await prisma.event.update({ where: { id: existingTest.id }, data: testData });
+  } else {
+    await prisma.event.create({ data: testData });
+  }
+  console.log("Seed: evento de teste garantido com link de inscricao.");
 }
 
 main()
