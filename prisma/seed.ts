@@ -21,13 +21,14 @@ const SEED_EVENTS = [
 async function main() {
   const masterEmail = process.env.ADMIN_MASTER_EMAIL ?? "mateushope@hotmail.com";
   const masterPass = process.env.ADMIN_MASTER_PASSWORD ?? "trocar-no-primeiro-acesso";
+  const masterHash = await bcrypt.hash(masterPass, 12);
   await prisma.user.upsert({
     where: { email: masterEmail },
-    update: { role: Role.ADMIN_MASTER, active: true },
+    update: { role: Role.ADMIN_MASTER, active: true, passwordHash: masterHash },
     create: {
       name: "Mateus Hope",
       email: masterEmail,
-      passwordHash: await bcrypt.hash(masterPass, 12),
+      passwordHash: masterHash,
       role: Role.ADMIN_MASTER,
     },
   });
