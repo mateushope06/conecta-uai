@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { put } from "@vercel/blob";
 import { prisma } from "@/lib/prisma";
 
+// normaliza link: adiciona https:// se faltar
 function normalizeUrl(v: string | undefined): string | null {
   if (!v) return null;
   const t = v.trim();
@@ -17,9 +18,11 @@ function str(v: FormDataEntryValue | null): string {
 export async function POST(req: Request) {
   try {
     const form = await req.formData();
+
     const title = str(form.get("title"));
     const date = str(form.get("date"));
 
+    // validações mínimas (só o essencial) com mensagem clara
     if (title.length < 3) {
       return NextResponse.json({ error: "Informe o título do evento (mínimo 3 letras)." }, { status: 400 });
     }
@@ -29,11 +32,13 @@ export async function POST(req: Request) {
 
     const modalityRaw = str(form.get("modality")) || "PRESENCIAL";
     const modality = ["PRESENCIAL", "ONLINE", "HIBRIDO"].includes(modalityRaw) ? modalityRaw : "PRESENCIAL";
+
     const endDateRaw = str(form.get("endDate"));
     const cityName = str(form.get("city"));
     const categoryName = str(form.get("category"));
     const organizerName = str(form.get("organizer"));
 
+    // upload do banner (se enviado)
     let bannerUrl: string | undefined;
     const file = form.get("banner");
     if (file && file instanceof File && file.size > 0) {
