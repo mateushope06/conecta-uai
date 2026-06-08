@@ -1,9 +1,9 @@
 import { auth, isMaster } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { approveEvent, rejectEvent, grantUser, revokeUser } from "../actions";
+import { approveEvent, rejectEvent, deleteEvent, grantUser, revokeUser } from "../actions";
 import { logout } from "../auth-actions";
-import { Check, X, Clock, MapPin } from "lucide-react";
+import { Check, X, Clock, MapPin, Trash2 } from "lucide-react";
 
 export default async function Painel() {
   const session = await auth();
@@ -15,6 +15,11 @@ export default async function Painel() {
     where: { status: "PENDING" },
     include: { city: true, category: true, organizer: true, banner: true },
     orderBy: { createdAt: "desc" },
+  });
+  const published = await prisma.event.findMany({
+    where: { status: "APPROVED" },
+    include: { city: true, category: true, organizer: true, banner: true },
+    orderBy: { date: "desc" },
   });
   const users = master ? await prisma.user.findMany({ orderBy: { createdAt: "asc" } }) : [];
 
@@ -54,7 +59,6 @@ export default async function Painel() {
             </div>
             {e.address && <div style={{ color: "#5B667E", fontSize: 14 }}><MapPin size={13} style={{ verticalAlign: -2 }} /> {e.address}{e.city?.name ? ` — ${e.city.name}` : ""}</div>}
             <p style={{ fontSize: 14 }}>{e.description}</p>
-
             {e.registerUrl && (
               <div style={{ fontSize: 13, margin: "8px 0", padding: "8px 10px", background: "#F6F8FB", borderRadius: 8, wordBreak: "break-all" }}>
                 <strong style={{ color: "#16203A" }}>Link de inscrição:</strong>{" "}
@@ -62,7 +66,6 @@ export default async function Painel() {
                 <div style={{ color: "#9aa3b5", fontSize: 12, marginTop: 2 }}>Verifique o destino antes de autorizar.</div>
               </div>
             )}
-
             <div style={{ fontSize: 13, color: "#5B667E" }}>
               {e.organizer?.name} · enviado por {e.submitterName ?? "—"} ({e.submitterEmail ?? "—"}{e.submitterPhone ? ` · ${e.submitterPhone}` : ""})
             </div>
@@ -74,6 +77,30 @@ export default async function Painel() {
                 <button style={ghost}><X size={15} style={{ verticalAlign: -2 }} /> Recusar</button>
               </form>
             </div>
+          </div>
+        ))}
+      </section>
+
+      <section style={{ marginBottom: 40 }}>
+        <h2 style={{ fontSize: 18 }}>Eventos publicados ({published.length})</h2>
+        {published.length === 0 && <p style={{ color: "#5B667E" }}>Nenhum evento publicado.</p>}
+        {published.map((e) => (
+          <div key={e.id} style={{ ...card, display: "flex", gap: 12, alignItems: "center" }}>
+            {e.banner?.url ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={e.banner.url} alt="" style={{ width: 70, height: 52, objectFit: "cover", borderRadius: 8, flex: "0 0 auto" }} />
+            ) : (
+              <div style={{ width: 70, height: 52, borderRadius: 8, background: "linear-gradient(135deg,#0D3B8C,#16A57F)", flex: "0 0 auto" }} />
+            )}
+            <div style={{ flex: 1 }}>
+              <strong style={{ fontSize: 15 }}>{e.title}</strong>
+              <div style={{ color: "#5B667E", fontSize: 13 }}>
+                {e.date.toLocaleDateString("pt-BR")}{e.city?.name ? ` · ${e.city.name}` : ""}{e.organizer?.name ? ` · ${e.organizer.name}` : ""}
+              </div>
+            </div>
+            <form action={async () => { "use server"; await deleteEvent(e.id); }}>
+              <button style={{ ...ghost, color: "#c0392b", borderColor: "#f2c4c0" }}><Trash2 size={14} style={{ verticalAlign: -2 }} /> Excluir</button>
+            </form>
           </div>
         ))}
       </section>

@@ -78,6 +78,7 @@ export default function SiteChrome({ children }: { children: React.ReactNode }) 
                 <Icon size={15} /> {label}
               </Link>
             ))}
+            <Link href="/realizados">Eventos realizados</Link>
             <a className="foot-wa" href={WA_LINK} target="_blank" rel="noreferrer">
               <WhatsApp size={15} /> Fale no WhatsApp
             </a>

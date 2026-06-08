@@ -63,3 +63,12 @@ export async function revokeUser(id: string) {
   await prisma.auditLog.create({ data: { action: "USER_REVOKED", detail: target?.email, userId: masterId } });
   revalidatePath("/admin/painel");
 }
+
+export async function deleteEvent(id) {
+  const { session } = await requireAdmin();
+  await prisma.event.delete({ where: { id } });
+  await prisma.auditLog.create({ data: { action: "EVENT_DELETED", detail: id, userId: (session?.user)?.id } });
+  revalidatePath("/admin/painel");
+  revalidatePath("/");
+  revalidatePath("/realizados");
+}
