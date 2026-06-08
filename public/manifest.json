@@ -1,0 +1,13 @@
+{
+  "name": "Conecta UAI — Agenda da Inovação",
+  "short_name": "Conecta UAI",
+  "description": "A Unificada Agenda da Inovação do Sul de Minas.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0D3B8C",
+  "icons": [
+    { "src": "/icon.jpg", "sizes": "192x192", "type": "image/jpeg", "purpose": "any" },
+    { "src": "/icon.jpg", "sizes": "512x512", "type": "image/jpeg", "purpose": "any" }
+  ]
+}
