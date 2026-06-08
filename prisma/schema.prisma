@@ -76,6 +76,7 @@ model Event {
   title       String
   description String?
   date        DateTime
+  endDate     DateTime?
   startTime   String?     // "09:00"
   endTime     String?     // "12:00"
   address     String?     // endereço / local
