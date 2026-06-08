@@ -1,83 +1,76 @@
 import { NextResponse } from "next/server";
 import { put } from "@vercel/blob";
-import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { notifyNewSubmission } from "@/lib/email";
 
-const schema = z.object({
-  title: z.string().min(3),
-  description: z.string().optional(),
-  date: z.string(), // "2026-06-20"
-  startTime: z.string().optional(),
-  endTime: z.string().optional(),
-  address: z.string().optional(),
-  modality: z.enum(["PRESENCIAL", "ONLINE", "HIBRIDO"]).default("PRESENCIAL"),
-  registerUrl: z.string().url().optional().or(z.literal("")),
-  city: z.string().optional(),
-  category: z.string().optional(),
-  organizer: z.string().optional(),
-  submitterName: z.string().optional(),
-  submitterEmail: z.string().email().optional().or(z.literal("")),
-  submitterPhone: z.string().optional(),
-});
+function normalizeUrl(v: string | undefined): string | null {
+  if (!v) return null;
+  const t = v.trim();
+  if (!t) return null;
+  if (/^https?:\/\//i.test(t)) return t;
+  return `https://${t}`;
+}
 
-// POST /api/submissions  (multipart/form-data — campos + arquivo "banner")
+function str(v: FormDataEntryValue | null): string {
+  return typeof v === "string" ? v.trim() : "";
+}
+
 export async function POST(req: Request) {
   try {
     const form = await req.formData();
-    const raw = Object.fromEntries(form.entries());
-    const parsed = schema.safeParse(raw);
-    if (!parsed.success) {
-      return NextResponse.json({ error: "Dados inválidos", issues: parsed.error.flatten() }, { status: 400 });
-    }
-    const d = parsed.data;
+    const title = str(form.get("title"));
+    const date = str(form.get("date"));
 
-    // upload do banner (se enviado) para o Vercel Blob
+    if (title.length < 3) {
+      return NextResponse.json({ error: "Informe o título do evento (mínimo 3 letras)." }, { status: 400 });
+    }
+    if (!date) {
+      return NextResponse.json({ error: "Informe a data do evento." }, { status: 400 });
+    }
+
+    const modalityRaw = str(form.get("modality")) || "PRESENCIAL";
+    const modality = ["PRESENCIAL", "ONLINE", "HIBRIDO"].includes(modalityRaw) ? modalityRaw : "PRESENCIAL";
+    const endDateRaw = str(form.get("endDate"));
+    const cityName = str(form.get("city"));
+    const categoryName = str(form.get("category"));
+    const organizerName = str(form.get("organizer"));
+
     let bannerUrl: string | undefined;
     const file = form.get("banner");
     if (file && file instanceof File && file.size > 0) {
-      const blob = await put(`banners/${Date.now()}-${file.name}`, file, { access: "public" });
+      const safe = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+      const blob = await put(`banners/${Date.now()}-${safe}`, file, { access: "public" });
       bannerUrl = blob.url;
     }
 
-    const city = d.city ? await prisma.city.upsert({ where: { name: d.city }, update: {}, create: { name: d.city } }) : null;
-    const category = d.category ? await prisma.category.upsert({ where: { name: d.category }, update: {}, create: { name: d.category } }) : null;
-    const organizer = d.organizer ? await prisma.organizer.upsert({ where: { name: d.organizer }, update: {}, create: { name: d.organizer } }) : null;
+    const city = cityName ? await prisma.city.upsert({ where: { name: cityName }, update: {}, create: { name: cityName } }) : null;
+    const category = categoryName ? await prisma.category.upsert({ where: { name: categoryName }, update: {}, create: { name: categoryName } }) : null;
+    const organizer = organizerName ? await prisma.organizer.upsert({ where: { name: organizerName }, update: {}, create: { name: organizerName } }) : null;
 
     const event = await prisma.event.create({
       data: {
-        title: d.title,
-        description: d.description,
-        date: new Date(d.date + "T00:00:00-03:00"),
-        startTime: d.startTime,
-        endTime: d.endTime,
-        address: d.address,
-        modality: d.modality,
-        registerUrl: d.registerUrl || null,
-        status: "PENDING", // entra na fila de aprovação
+        title,
+        description: str(form.get("description")) || null,
+        date: new Date(date + "T00:00:00-03:00"),
+        endDate: endDateRaw ? new Date(endDateRaw + "T00:00:00-03:00") : null,
+        startTime: str(form.get("startTime")) || null,
+        endTime: str(form.get("endTime")) || null,
+        address: str(form.get("address")) || null,
+        modality: modality as "PRESENCIAL" | "ONLINE" | "HIBRIDO",
+        registerUrl: normalizeUrl(str(form.get("registerUrl"))),
+        status: "PENDING",
         cityId: city?.id,
         categoryId: category?.id,
         organizerId: organizer?.id,
-        submitterName: d.submitterName,
-        submitterEmail: d.submitterEmail || null,
-        submitterPhone: d.submitterPhone,
+        submitterName: str(form.get("submitterName")) || null,
+        submitterEmail: str(form.get("submitterEmail")) || null,
+        submitterPhone: str(form.get("submitterPhone")) || null,
         ...(bannerUrl ? { banner: { create: { url: bannerUrl } } } : {}),
       },
     });
 
-    // avisa o Mateus (não bloqueia a resposta se o e-mail falhar)
-    notifyNewSubmission({
-      title: event.title,
-      organizer: d.organizer,
-      city: d.city,
-      date: d.date,
-      submitterName: d.submitterName,
-      submitterEmail: d.submitterEmail || undefined,
-    }).catch((e) => console.error("[notify] falhou:", e));
-
     return NextResponse.json({ ok: true, id: event.id }, { status: 201 });
   } catch (err) {
-    console.error(err);
-    return NextResponse.json({ error: "Erro ao enviar cadastro." }, { status: 500 });
+    console.error("[submissions] erro:", err);
+    return NextResponse.json({ error: "Erro ao enviar o cadastro. Tente novamente em instantes." }, { status: 500 });
   }
 }
