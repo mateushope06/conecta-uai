@@ -1,21 +1,64 @@
 "use client";
-
 import { useState } from "react";
 
-// PÁGINA CADASTRAR — formulário completo enviando para /api/submissions
-// (inclui upload de banner e link de inscrição). Aqui também é só
-// trocar o visual pelo seu layout aprovado; a lógica de envio fica.
+async function compressImage(file: File, maxW = 1600, quality = 0.8): Promise<File> {
+  if (!file.type.startsWith("image/")) return file;
+  const dataUrl: string = await new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res(r.result as string);
+    r.onerror = rej;
+    r.readAsDataURL(file);
+  });
+  const img: HTMLImageElement = await new Promise((res, rej) => {
+    const i = new Image();
+    i.onload = () => res(i);
+    i.onerror = rej;
+    i.src = dataUrl;
+  });
+  const scale = Math.min(1, maxW / img.width);
+  const w = Math.round(img.width * scale);
+  const h = Math.round(img.height * scale);
+  const canvas = document.createElement("canvas");
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return file;
+  ctx.drawImage(img, 0, 0, w, h);
+  const blob: Blob | null = await new Promise((res) => canvas.toBlob(res, "image/jpeg", quality));
+  if (!blob) return file;
+  const base = file.name.replace(/\.[^.]+$/, "");
+  return new File([blob], `${base}.jpg`, { type: "image/jpeg" });
+}
 
 export default function Cadastrar() {
   const [status, setStatus] = useState<"idle" | "sending" | "ok" | "error">("idle");
+  const [errMsg, setErrMsg] = useState<string>("");
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setStatus("sending");
-    const fd = new FormData(e.currentTarget);
-    const res = await fetch("/api/submissions", { method: "POST", body: fd });
-    setStatus(res.ok ? "ok" : "error");
-    if (res.ok) (e.target as HTMLFormElement).reset();
+    setErrMsg("");
+    try {
+      const formEl = e.currentTarget;
+      const fd = new FormData(formEl);
+      const file = fd.get("banner");
+      if (file && file instanceof File && file.size > 0) {
+        const compressed = await compressImage(file);
+        fd.set("banner", compressed);
+      }
+      const res = await fetch("/api/submissions", { method: "POST", body: fd });
+      if (res.ok) {
+        setStatus("ok");
+        formEl.reset();
+      } else {
+        const data = await res.json().catch(() => null);
+        setErrMsg(data?.error || "Verifique os campos e tente novamente.");
+        setStatus("error");
+      }
+    } catch {
+      setErrMsg("Não foi possível enviar. Verifique sua conexão e tente de novo.");
+      setStatus("error");
+    }
   }
 
   if (status === "ok") {
@@ -58,7 +101,7 @@ export default function Cadastrar() {
         <button disabled={status === "sending"} style={btn}>
           {status === "sending" ? "Enviando..." : "Enviar para aprovação"}
         </button>
-        {status === "error" && <p style={{ color: "#c0392b" }}>Algo deu errado. Confira os campos e tente de novo.</p>}
+        {status === "error" && <p style={{ color: "#c0392b" }}>{errMsg || "Algo deu errado. Confira os campos e tente de novo."}</p>}
       </form>
     </main>
   );
