@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import {
-  CalendarPlus, CalendarDays, Info, Rocket, Menu, X, Lock, WhatsApp,
+  CalendarPlus, CalendarDays, Info, Rocket, Menu, X, Lock, WhatsApp, History,
 } from "./icons";
 
 const NAV: [string, string, React.ComponentType<{ size?: number }>][] = [
@@ -78,7 +78,7 @@ export default function SiteChrome({ children }: { children: React.ReactNode }) 
                 <Icon size={15} /> {label}
               </Link>
             ))}
-            <Link href="/realizados">Eventos realizados</Link>
+            <Link href="/realizados"><History size={15} /> Eventos realizados</Link>
             <a className="foot-wa" href={WA_LINK} target="_blank" rel="noreferrer">
               <WhatsApp size={15} /> Fale no WhatsApp
             </a>
