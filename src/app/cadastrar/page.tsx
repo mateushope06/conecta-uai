@@ -1,7 +1,6 @@
 "use client";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 
-// comprime imagem no navegador (evita estourar limite de upload)
 async function compressImage(file: File, maxW = 1600, quality = 0.8): Promise<File> {
   if (!file.type.startsWith("image/")) return file;
   const dataUrl: string = await new Promise((res, rej) => {
@@ -30,13 +29,17 @@ async function compressImage(file: File, maxW = 1600, quality = 0.8): Promise<Fi
   return new File([blob], file.name.replace(/\.[^.]+$/, "") + ".jpg", { type: "image/jpeg" });
 }
 
-// mascara WhatsApp (XX) XXXXX-XXXX
 function maskPhone(v: string): string {
   const d = v.replace(/\D/g, "").slice(0, 11);
   if (d.length <= 2) return d.length ? `(${d}` : "";
   if (d.length <= 7) return `(${d.slice(0, 2)}) ${d.slice(2)}`;
   return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
 }
+
+const CATEGORIAS = ["Inovação", "Tecnologia", "Negócios", "Universitário", "Robótica", "Comercial", "RH", "Finanças", "Marketing"];
+
+type UF = { id: number; sigla: string; nome: string };
+type Municipio = { id: number; nome: string };
 
 export default function Cadastrar() {
   const [status, setStatus] = useState<"idle" | "sending" | "ok" | "error">("idle");
@@ -46,13 +49,39 @@ export default function Cadastrar() {
   const [bannerPreview, setBannerPreview] = useState<string>("");
   const fileRef = useRef<HTMLInputElement>(null);
 
+  const [ufs, setUfs] = useState<UF[]>([]);
+  const [uf, setUf] = useState("MG");
+  const [cidades, setCidades] = useState<Municipio[]>([]);
+  const [cidade, setCidade] = useState("");
+  const [loadingCidades, setLoadingCidades] = useState(false);
+
+  const [cats, setCats] = useState<string[]>([]);
+  const [catOutros, setCatOutros] = useState("");
+
+  useEffect(() => {
+    fetch("https://servicodados.ibge.gov.br/api/v1/localidades/estados?orderBy=nome")
+      .then((r) => r.json()).then((d: UF[]) => setUfs(d)).catch(() => setUfs([]));
+  }, []);
+
+  useEffect(() => {
+    if (!uf) { setCidades([]); return; }
+    setLoadingCidades(true);
+    setCidade("");
+    fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${uf}/municipios?orderBy=nome`)
+      .then((r) => r.json()).then((d: Municipio[]) => setCidades(d)).catch(() => setCidades([]))
+      .finally(() => setLoadingCidades(false));
+  }, [uf]);
+
+  function toggleCat(c: string) {
+    setCats((prev) => prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c]);
+  }
+
   function onPickBanner(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
     if (!f) return;
     setBannerFile(f);
     setBannerPreview(URL.createObjectURL(f));
   }
-
   function removeBanner() {
     setBannerFile(null);
     setBannerPreview("");
@@ -62,31 +91,36 @@ export default function Cadastrar() {
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setErrMsg("");
-
     const formEl = e.currentTarget;
     const fd = new FormData(formEl);
 
-    // validações no cliente (mensagens claras)
+    const todasCats = [...cats];
+    if (catOutros.trim()) todasCats.push(catOutros.trim());
+    fd.set("city", cidade);
+    fd.set("category", todasCats.join(", "));
+
     const req = (name: string, label: string) => {
-      const v = (fd.get(name) as string || "").trim();
+      const v = ((fd.get(name) as string) || "").trim();
       return v ? null : `Preencha: ${label}.`;
     };
+    const email = ((fd.get("submitterEmail") as string) || "").trim();
     const checks = [
       req("submitterName", "Seu nome"),
+      email ? null : "Preencha: Seu e-mail.",
+      email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? "E-mail inválido (precisa ter @ e domínio)." : null,
       phone.replace(/\D/g, "").length >= 10 ? null : "Informe um WhatsApp válido: (XX) XXXXX-XXXX.",
       req("title", "Título do evento"),
       req("date", "Data de início"),
-      req("city", "Cidade"),
-      req("organizer", "Organizador"),
+      uf ? null : "Escolha o estado.",
+      cidade ? null : "Escolha a cidade.",
+      todasCats.length ? null : "Escolha ao menos uma categoria.",
+      req("organizer", "Instituição Organizadora"),
     ];
-    const email = (fd.get("submitterEmail") as string || "").trim();
-    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) checks.push("E-mail inválido (precisa ter @ e domínio).");
     const firstErr = checks.find(Boolean);
     if (firstErr) { setErrMsg(firstErr); setStatus("error"); return; }
 
     setStatus("sending");
     try {
-      // troca banner pelo comprimido
       if (bannerFile) {
         const compressed = await compressImage(bannerFile);
         fd.set("banner", compressed);
@@ -98,7 +132,7 @@ export default function Cadastrar() {
         setStatus("ok");
         formEl.reset();
         removeBanner();
-        setPhone("");
+        setPhone(""); setCidade(""); setCats([]); setCatOutros("");
       } else {
         const data = await res.json().catch(() => null);
         setErrMsg(data?.error || "Verifique os campos e tente novamente.");
@@ -125,19 +159,11 @@ export default function Cadastrar() {
       <p style={{ color: "#5B667E" }}>Campos com * são obrigatórios. O evento é publicado após aprovação.</p>
       <form onSubmit={onSubmit} style={{ display: "grid", gap: 12, maxWidth: 560 }}>
         <input name="submitterName" placeholder="Seu nome *" style={inp} />
-        <input name="submitterEmail" type="email" placeholder="Seu e-mail (opcional)" style={inp} />
-        <input
-          name="submitterPhone"
-          placeholder="WhatsApp * — (XX) XXXXX-XXXX"
-          value={phone}
-          onChange={(e) => setPhone(maskPhone(e.target.value))}
-          inputMode="numeric"
-          style={inp}
-        />
+        <input name="submitterEmail" type="email" placeholder="Seu e-mail *" style={inp} />
+        <input name="submitterPhone" placeholder="WhatsApp * — (XX) XXXXX-XXXX" value={phone} onChange={(e) => setPhone(maskPhone(e.target.value))} inputMode="numeric" style={inp} />
         <hr style={{ border: 0, borderTop: "1px solid #E5E9F0" }} />
         <input name="title" placeholder="Título do evento *" style={inp} />
         <textarea name="description" placeholder="Descrição" rows={3} style={inp} />
-
         <label style={lbl}>Data e horário</label>
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
           <span style={{ flex: 1, minWidth: 140 }}>
@@ -159,18 +185,43 @@ export default function Cadastrar() {
             <input name="endTime" type="time" style={{ ...inp, width: "100%" }} />
           </span>
         </div>
-
         <input name="address" placeholder="Endereço / Local" style={inp} />
-        <input name="city" placeholder="Cidade *" style={inp} />
-        <input name="category" placeholder="Categoria" style={inp} />
-        <input name="organizer" placeholder="Organizador *" style={inp} />
+
+        <label style={lbl}>Local do evento</label>
+        <div style={{ display: "flex", gap: 10 }}>
+          <select value={uf} onChange={(e) => setUf(e.target.value)} style={{ ...inp, width: 120 }}>
+            <option value="">UF *</option>
+            {ufs.map((u) => <option key={u.id} value={u.sigla}>{u.sigla}</option>)}
+          </select>
+          <select value={cidade} onChange={(e) => setCidade(e.target.value)} disabled={!uf || loadingCidades} style={{ ...inp, flex: 1 }}>
+            <option value="">{loadingCidades ? "Carregando..." : "Cidade *"}</option>
+            {cidades.map((c) => <option key={c.id} value={c.nome}>{c.nome}</option>)}
+          </select>
+        </div>
+
+        <label style={lbl}>Categorias * (pode escolher mais de uma)</label>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+          {CATEGORIAS.map((c) => {
+            const on = cats.includes(c);
+            return (
+              <button type="button" key={c} onClick={() => toggleCat(c)}
+                style={{ padding: "8px 14px", borderRadius: 20, cursor: "pointer", fontSize: 14, fontWeight: 600,
+                  border: on ? "1px solid #0D3B8C" : "1px solid #E5E9F0",
+                  background: on ? "#0D3B8C" : "#fff", color: on ? "#fff" : "#16203A" }}>
+                {c}
+              </button>
+            );
+          })}
+        </div>
+        <input value={catOutros} onChange={(e) => setCatOutros(e.target.value)} placeholder="Outros (digite uma categoria)" style={inp} />
+
+        <input name="organizer" placeholder="Instituição Organizadora *" style={inp} />
         <select name="modality" style={inp} defaultValue="PRESENCIAL">
           <option value="PRESENCIAL">Presencial</option>
           <option value="ONLINE">Online</option>
           <option value="HIBRIDO">Híbrido</option>
         </select>
         <input name="registerUrl" placeholder="Link de inscrição (ex: site.com/inscricao)" style={inp} />
-
         <label style={lbl}>Banner do evento (opcional)</label>
         <input ref={fileRef} name="banner" type="file" accept="image/*" onChange={onPickBanner} style={inp} />
         {bannerPreview && (
@@ -180,7 +231,6 @@ export default function Cadastrar() {
             <button type="button" onClick={removeBanner} style={btnGhost}>Remover imagem</button>
           </div>
         )}
-
         <button disabled={status === "sending"} style={btn}>
           {status === "sending" ? "Enviando..." : "Enviar para aprovação"}
         </button>

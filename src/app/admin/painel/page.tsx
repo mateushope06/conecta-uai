@@ -36,18 +36,35 @@ export default async function Painel() {
         {pending.map((e) => (
           <div key={e.id} style={card}>
             {e.banner?.url && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={e.banner.url} alt="" style={{ width: "100%", height: 160, objectFit: "cover", borderRadius: 10, marginBottom: 12 }} />
+              <a href={e.banner.url} target="_blank" rel="noreferrer" title="Abrir banner em tamanho real">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={e.banner.url} alt="banner do evento" style={{ width: "100%", maxHeight: 360, objectFit: "contain", background: "#F6F8FB", borderRadius: 10, marginBottom: 6, border: "1px solid #E5E9F0" }} />
+              </a>
+            )}
+            {e.banner?.url && (
+              <div style={{ fontSize: 12, color: "#5B667E", marginBottom: 12 }}>
+                <a href={e.banner.url} target="_blank" rel="noreferrer" style={{ color: "#0D3B8C" }}>Abrir imagem em nova aba ↗</a>
+              </div>
             )}
             <strong style={{ fontSize: 16 }}>{e.title}</strong>
             <div style={{ color: "#5B667E", fontSize: 14, margin: "6px 0" }}>
-              <Clock size={13} style={{ verticalAlign: -2 }} /> {e.date.toLocaleDateString("pt-BR")} {e.startTime ?? ""}
+              <Clock size={13} style={{ verticalAlign: -2 }} /> {e.date.toLocaleDateString("pt-BR")}
+              {e.endDate ? ` a ${e.endDate.toLocaleDateString("pt-BR")}` : ""} {e.startTime ?? ""}
               {e.endTime ? `–${e.endTime}` : ""} · {e.category?.name} · {e.modality}
             </div>
-            {e.address && <div style={{ color: "#5B667E", fontSize: 14 }}><MapPin size={13} style={{ verticalAlign: -2 }} /> {e.address}</div>}
+            {e.address && <div style={{ color: "#5B667E", fontSize: 14 }}><MapPin size={13} style={{ verticalAlign: -2 }} /> {e.address}{e.city?.name ? ` — ${e.city.name}` : ""}</div>}
             <p style={{ fontSize: 14 }}>{e.description}</p>
+
+            {e.registerUrl && (
+              <div style={{ fontSize: 13, margin: "8px 0", padding: "8px 10px", background: "#F6F8FB", borderRadius: 8, wordBreak: "break-all" }}>
+                <strong style={{ color: "#16203A" }}>Link de inscrição:</strong>{" "}
+                <a href={e.registerUrl} target="_blank" rel="noreferrer" style={{ color: "#0D3B8C" }}>{e.registerUrl} ↗</a>
+                <div style={{ color: "#9aa3b5", fontSize: 12, marginTop: 2 }}>Verifique o destino antes de autorizar.</div>
+              </div>
+            )}
+
             <div style={{ fontSize: 13, color: "#5B667E" }}>
-              {e.organizer?.name} · enviado por {e.submitterName ?? "—"} ({e.submitterEmail ?? "—"})
+              {e.organizer?.name} · enviado por {e.submitterName ?? "—"} ({e.submitterEmail ?? "—"}{e.submitterPhone ? ` · ${e.submitterPhone}` : ""})
             </div>
             <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
               <form action={async () => { "use server"; await approveEvent(e.id); }}>
