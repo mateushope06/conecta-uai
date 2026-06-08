@@ -9,9 +9,9 @@ export const metadata: Metadata = {
   manifest: "/manifest.json",
   themeColor: "#0D3B8C",
   icons: {
-    icon: "/icon.jpg",
-    shortcut: "/icon.jpg",
-    apple: "/icon.jpg",
+    icon: "/icon.png",
+    shortcut: "/icon.png",
+    apple: "/icon.png",
   },
   appleWebApp: {
     capable: true,
