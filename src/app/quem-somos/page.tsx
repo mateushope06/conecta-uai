@@ -8,9 +8,8 @@ export default function QuemSomos() {
 
       <p>
         <strong>Conecta UAI</strong> é a <strong>Unificada Agenda da Inovação</strong> do Sul de Minas —
-        e o "UAI", além da sigla, é a nossa marca mineira. Um ponto único onde o ecossistema da região
-        (universidades, startups, mentores, investidores e poder público) encontra, em um só lugar,
-        tudo o que está acontecendo.
+        e o "UAI", além da sigla, é a nossa marca mineira. Uma iniciativa independente que reúne, em um só
+        lugar, tudo o que está acontecendo no ecossistema regional de inovação.
       </p>
 
       <div className="uai-grid">
@@ -28,8 +27,22 @@ export default function QuemSomos() {
         </div>
       </div>
 
+      <p>
+        Acreditamos na inovação construída a muitas mãos. Por isso, a plataforma conecta os diferentes atores
+        das <strong>quatro hélices da inovação</strong> — governo, academia, iniciativa privada e sociedade civil —
+        dando visibilidade aos eventos que aproximam universidades, startups, empresas, investidores, mentores,
+        poder público e comunidade.
+      </p>
+
+      <p>
+        O Conecta UAI nasce do trabalho voluntário e do compromisso com o desenvolvimento regional. Apoiamos e
+        caminhamos lado a lado com iniciativas como o <strong>Sistema Regional de Inovação (SRI) do Sul de Minas</strong>,
+        somando esforços para fortalecer as conexões da região. É um projeto independente que mantém parceria de
+        apoio com as organizações do ecossistema.
+      </p>
+
       <p style={{ color: "var(--muted)", marginTop: 28 }}>
-        Direitos &amp; produção: <strong>DEEP Tree Inovação Ltda.</strong>
+        Iniciativa, direitos &amp; produção: <strong>DEEP Tree Inovação Ltda.</strong>
       </p>
     </div>
   );

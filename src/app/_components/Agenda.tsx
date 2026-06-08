@@ -134,7 +134,7 @@ export default function Agenda({ events, cities, categories, organizers }: {
         <div className="hero-overlay" />
         <div className="hero-mesh" />
         <div className="hero-inner">
-          <span className="hero-badge"><Sparkles size={13} /> Sistema Regional de Inovação · Sul de Minas</span>
+          
           <h1>Conectando pessoas, ideias e oportunidades através da inovação.</h1>
           <p>Acompanhe os principais eventos do ecossistema de inovação do Sul de Minas.</p>
           <div className="hero-cta">

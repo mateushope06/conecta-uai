@@ -11,7 +11,7 @@ const NAV: [string, string, React.ComponentType<{ size?: number }>][] = [
   ["/cadastrar", "Cadastrar", CalendarPlus],
   ["/", "Eventos", CalendarDays],
   ["/quem-somos", "Quem somos", Info],
-  ["/sri", "SRI", Rocket],
+  ["/sri", "Parceiros do SRI", Rocket],
 ];
 
 const WA_MSG =
