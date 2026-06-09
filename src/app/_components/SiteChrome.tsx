@@ -90,7 +90,7 @@ export default function SiteChrome({ children }: { children: React.ReactNode }) 
         </div>
 
         <div className="foot-bottom">
-          <span>© 2026 Conecta UAI · Sistema Regional de Inovação do Sul de Minas</span>
+          <span>© 2026 Conecta UAI · Unificada Agenda da Inovação do Sul de Minas</span>
           <span className="rights">
             Direitos &amp; produção: <strong>DEEP Tree Inovação Ltda.</strong>
           </span>
