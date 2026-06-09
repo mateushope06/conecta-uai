@@ -36,7 +36,7 @@ function maskPhone(v: string): string {
   return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
 }
 
-const CATEGORIAS = ["Inovação", "Tecnologia", "Negócios", "Universitário", "Robótica", "Comercial", "RH", "Finanças", "Marketing"];
+const CATEGORIAS = ["Inovação","Tecnologia","Negócios","IA","Webinar","ESG","Economia Criativa","Robótica","Comercial","RH","Finanças","Marketing","Live","Podcast"];
 
 type UF = { id: number; sigla: string; nome: string };
 type Municipio = { id: number; nome: string };
