@@ -8,11 +8,6 @@ export const metadata: Metadata = {
     "A Unificada Agenda da Inovação do Sul de Minas. Acompanhe os principais eventos do ecossistema regional.",
   manifest: "/manifest.json",
   themeColor: "#0D3B8C",
-  icons: {
-    icon: "/icon.png",
-    shortcut: "/icon.png",
-    apple: "/icon.png",
-  },
   appleWebApp: {
     capable: true,
     title: "Conecta UAI",
